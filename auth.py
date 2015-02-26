@@ -1,8 +1,5 @@
-from httplib2 import Http
 import webbrowser
-from pprint import pprint
 
-from apiclient.discovery import build
 from oauth2client.file import Storage
 from oauth2client.client import flow_from_clientsecrets
 
@@ -27,14 +24,7 @@ class Authorize(object):
             return credentials
 
 
-def build_service(credentials):
-    http_auth = credentials.authorize(Http())
-    return build('drive', 'v2', http=http_auth)
-
-drive_service = build_service(Authorize().get_credentials())
 
 
-files = drive_service.files().list(maxResults=1).execute()
 
-pprint(files)
 
