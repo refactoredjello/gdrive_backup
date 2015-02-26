@@ -19,8 +19,10 @@ class Authorize(object):
         if credentials is None:
             webbrowser.open(self.auth_url)
             code = raw_input('Enter Verification Code: ').strip()
-            self.storage.put(self.flow.step2_exchange(code))
-        if credentials.refresh_token is not None:
+            credentials = self.flow.step2_exchange(code)
+            self.storage.put(credentials)
+            return credentials
+        if credentials is not None:
             return credentials
 
 
