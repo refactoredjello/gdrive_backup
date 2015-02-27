@@ -1,17 +1,21 @@
 from httplib2 import Http
-from pprint import pprint
 
 from apiclient.discovery import build
 
 from auth import Authorize
 
-def build_service(credentials):
-    http_auth = credentials.authorize(Http())
-    return build('drive', 'v2', http=http_auth)
 
-drive_service = build_service(Authorize().get_credentials())
+class BuildService:
+    def __init__(self):
+        """ Get credentials and create a http authorize object"""
+        self.credentials = Authorize().get_credentials()
+        self.http_auth = self.credentials.authorize(Http())
 
-files = drive_service.files().list(maxResults=1).execute()
+    def build_drive_service(self):
+        """Build an authenticated drive service object"""
+        return build('drive', 'v2', http=self.http_auth)
 
 
-pprint(files)
+
+
+
