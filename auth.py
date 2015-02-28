@@ -9,7 +9,7 @@ class Authorize(object):
         self.storage = Storage('credentials')
         self.flow = flow_from_clientsecrets(
             'client_secrets.json',
-            'https://www.googleapis.com/auth/drive.readonly',
+            'https://www.googleapis.com/auth/drive',
             redirect_uri='urn:ietf:wg:oauth:2.0:oob'
         )
         self.auth_url = self.flow.step1_get_authorize_url()
