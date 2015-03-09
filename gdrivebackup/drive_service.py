@@ -20,7 +20,7 @@ class DriveServiceWorker(object):
         self.drive_service = build_service()
         self.drive_files_service = self.drive_service.files()
 
-        self.STORAGE_PATH = 'file_store'
+        self.STORAGE_PATH = '..\\file_store'
         self.JSON_STORAGE = path.join(self.STORAGE_PATH, 'meta.json')
         self.file_list = self._get_file_list()
 

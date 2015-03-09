@@ -20,6 +20,4 @@ from os import path
 
 if __name__ == '__main__':
     DF = drive_service.DriveServiceWorker()
-    print DF.JSON_STORAGE
-    print path.exists(DF.JSON_STORAGE)
     DF.download_files()
