@@ -3,13 +3,13 @@ import json
 from httplib2 import Http
 import logging
 
-
 from apiclient.discovery import build
 from files_worker import DriveFolders, DriveFiles
 
 from auth import Authorize
 
 log = logging.getLogger('main.' + __name__)
+
 
 def build_service():
     """returns a  drive service object with an authorized http object"""
@@ -30,20 +30,21 @@ class DriveServiceWorker(object):
 
         self._get_file_list()
 
-    #TODO get folder of accompanied file
+    # TODO get folder of each file
     def _get_file_list(self):
         payload_types = (
             "trashed = false"
             "and ("
-                "mimeType = 'application/vnd.google-apps.document'"
-                "or mimeType = 'application/vnd.google-apps.presentation'"
-                "or mimeType = 'application/vnd.google-apps.spreadsheet'"
-                ")"
+            "mimeType = 'application/vnd.google-apps.document'"
+            "or mimeType = 'application/vnd.google-apps.presentation'"
+            "or mimeType = 'application/vnd.google-apps.spreadsheet'"
+            ")"
         )
 
         payload = {"q": payload_types}
         items = self.drive_files_service.list(**payload).execute()['items']
         self.file_list = {d['id']: DriveFiles(data=d) for d in items}
+        print 'Downloaded file meta data...'
 
     def _store_file_list(self):
         with open(self.JSON_STORAGE, "wb") as f:
@@ -99,10 +100,12 @@ class DriveServiceWorker(object):
 
         dl_count = 0
         wr_count = 0
+        if len(export_list) != 0:
+            print 'Starting Download of {} files...'.format(len(export_list))
         for item in export_list.values():
             log.debug('Try download \#%s File Name: %s', dl_count,
                       item.title)
-            #download the file using an authorized http object
+            # download the file using an authorized http object
             try:
                 response, content = self.drive_service._http.request(item.eurl)
                 log.debug('status: %s', response.status)
@@ -112,7 +115,5 @@ class DriveServiceWorker(object):
             except Exception, e:
                 log.exception('%s', e)
 
-        log.info('-' * 20 + '\n' + '%s files downloaded successfully',
-                 dl_count)
-        log.info('-' * 20 + '\n' + '%s files writen successfully',
-                 wr_count)
+        log.info('%s files downloaded successfully', dl_count)
+        log.info('%s files writen successfully', wr_count)
