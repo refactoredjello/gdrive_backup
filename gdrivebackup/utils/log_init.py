@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from os import path, mkdir
 
+
 def initialize_logger(log_dir):
     if not path.exists(log_dir):
         mkdir(log_dir)

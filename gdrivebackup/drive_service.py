@@ -4,8 +4,8 @@ from httplib2 import Http
 import logging
 
 from apiclient.discovery import build
-from files_worker import DriveFolders, DriveFiles
 
+from files_worker import DriveFolders, DriveFiles
 from auth import Authorize
 
 log = logging.getLogger('main.' + __name__)
@@ -87,6 +87,7 @@ class DriveServiceWorker(object):
         return dl_count, wr_count
 
     def download_files(self):
+        # Get the proper list of files to download
         export_list = self.file_list
         not_storage = True
         if os.path.isfile(self.JSON_STORAGE):
@@ -95,18 +96,18 @@ class DriveServiceWorker(object):
             not_storage = False
         else:
             self._store_file_list()
-
         log.info('Number of items found: %s', len(export_list))
 
         dl_count = 0
         wr_count = 0
         if len(export_list) != 0:
             print 'Starting Download of {} files...'.format(len(export_list))
+
         for item in export_list.values():
-            log.debug('Try download \#%s File Name: %s', dl_count,
-                      item.title)
-            # download the file using an authorized http object
+            log.debug('Try download \#%s File Name: %s', dl_count, item.title)
+
             try:
+                # Download the file using an authorized http object
                 response, content = self.drive_service._http.request(item.eurl)
                 log.debug('status: %s', response.status)
                 dl_count += 1

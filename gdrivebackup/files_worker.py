@@ -20,6 +20,7 @@ class DriveTypes(object):
 class DriveFolders(DriveTypes):
     pass
 
+
 class DriveFiles(DriveTypes):
     def __init__(self, data):
         self.data = data
@@ -40,9 +41,7 @@ class DriveFiles(DriveTypes):
                 '.sheet', 'xlsx'
             )
         }
-        #Get exporting data and file extension
+        # Get exporting data and file extension
         export_key = export_type_dict[self.mimeType]
         self.eurl = self.exportLinks[export_key[0]]
         self.ext = export_key[1]
-
-

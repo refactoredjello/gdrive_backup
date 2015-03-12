@@ -3,6 +3,10 @@ import webbrowser
 from oauth2client.file import Storage
 from oauth2client.client import flow_from_clientsecrets
 
+import logging
+# TODO add error handling and logging
+log = logging.getLogger('main.' + __name__)
+
 
 class Authorize(object):
     def __init__(self):
@@ -24,9 +28,3 @@ class Authorize(object):
             return credentials
         if credentials is not None:
             return credentials
-
-
-
-
-
-
