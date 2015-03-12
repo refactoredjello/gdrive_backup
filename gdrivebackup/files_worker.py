@@ -1,25 +1,35 @@
-class DriveFile(object):
-    def __init__(self, json_flag=False, data={}):
+import logging
+
+log = logging.getLogger('main.' + __name__)
+
+
+class DriveTypes(object):
+    def __init__(self, data):
         """
-        :param data: file meta data as a dictionary
+        :param data: google drive file meta data
         """
-        self.title = ''
-        self.modifiedDate = ''
-        self.id = ''
+        self.title = data['title'].translate({ord(c): u'_' for c in u'/|/'})
+        self.modifiedDate = data['modifiedDate']
+        self.id = data['id']
         self.exportLinks = {}
-        self.mimeType = ''
+        self.mimeType = data['mimeType']
         self.trash = ''
+        self.parents = data['parents']
+
+
+class DriveFolders(DriveTypes):
+    pass
+
+class DriveFiles(DriveTypes):
+    def __init__(self, data):
+        self.data = data
+        DriveTypes.__init__(self, self.data)
+        self.exportLinks = data['exportLinks']
         self.eurl = ''
         self.ext = ''
+        self._get_export_links()
 
-        self.parse_data(json_flag, data)
-
-    def parse_data(self, json_flag=False, data={}):
-        if json_flag:
-            pass
-            #log.debug('setting DriveFile attributes from json file '
-            #'meta.json')
-
+    def _get_export_links(self):
         export_type_dict = {
             'application/vnd.google-apps.document': (
                 'application/vnd.openxmlformats-officedocument.wordprocessingml'
@@ -30,27 +40,9 @@ class DriveFile(object):
                 '.sheet', 'xlsx'
             )
         }
-
-        self.title = data['title'].translate({ord(c): u'_' for c in u'/|/'})
-        self.modifiedDate = data['modifiedDate']
-        self.id = data['id']
-
-        #list of export url file options
-        self.exportLinks = data['exportLinks']
-        self.mimeType = data['mimeType']
-
         #Get exporting data and file extension
         export_key = export_type_dict[self.mimeType]
         self.eurl = self.exportLinks[export_key[0]]
         self.ext = export_key[1]
-
-        #Depcrated, trashy items are filtered at first file list request
-        if not json_flag:
-            self.trash = data['labels']['trashed']
-
-
-# DF = DriveFilesWorker()
-#DF.download_files()
-
 
 
