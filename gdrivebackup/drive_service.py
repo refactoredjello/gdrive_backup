@@ -2,13 +2,15 @@ import os.path
 import json
 from httplib2 import Http
 import logging
-
+from pprint import pprint
 from apiclient.discovery import build
 
 from files_worker import DriveFolders, DriveFiles
 from auth import Authorize
 
-log = logging.getLogger('main.' + __name__)
+
+DEBUG_FLAG = True
+log = logging.getLogger("main." + __name__)
 
 
 def build_service():
@@ -23,31 +25,45 @@ class DriveServiceWorker(object):
         self.drive_service = build_service()
         self.drive_files_service = self.drive_service.files()
 
-        self.STORAGE_PATH = '..\\file_store'
-        self.JSON_STORAGE = os.path.join(self.STORAGE_PATH, 'meta.json')
-        self.file_list = {}
-        self.folder_list = {}
+        self.STORAGE_PATH = "..\\file_store"
+        self.JSON_STORAGE = os.path.join(self.STORAGE_PATH, "meta.json")
+        self.file_list = self._get_file_list()
+        self.folder_list = self._get_folder_list()
 
-        self._get_file_list()
+    def _get_drive_list(self, payload_query):
+        payload = {"q": 'trashed=false and ' + payload_query,
+                   "fields": 'items(id,title,exportLinks,'
+                             'mimeType,modifiedDate,labels,'
+                             'parents(id,isRoot))'
+                   }
 
-    # TODO get folder of each file
+        if DEBUG_FLAG:
+            payload["maxResults"] = 10
+
+        items = self.drive_files_service.list(**payload).execute()["items"]
+        print 'Downloaded file meta data...'
+        if DEBUG_FLAG:
+            print pprint(items)
+        return items
+
+    def _get_folder_list(self):
+        payload_query = "mimeType = 'application/vnd.google-apps.folder'"
+        items = self._get_drive_list(payload_query)
+        return {d["id"]: DriveFolders(data=d) for d in items}
+
     def _get_file_list(self):
-        payload_types = (
-            "trashed = false"
-            "and ("
+        payload_query = (
+            "("
             "mimeType = 'application/vnd.google-apps.document'"
             "or mimeType = 'application/vnd.google-apps.presentation'"
             "or mimeType = 'application/vnd.google-apps.spreadsheet'"
             ")"
         )
-
-        payload = {"q": payload_types}
-        items = self.drive_files_service.list(**payload).execute()['items']
-        self.file_list = {d['id']: DriveFiles(data=d) for d in items}
-        print 'Downloaded file meta data...'
+        items = self._get_drive_list(payload_query)
+        return {d["id"]: DriveFiles(data=d) for d in items}
 
     def _store_file_list(self):
-        with open(self.JSON_STORAGE, "wb") as f:
+        with open(self.JSON_STORAGE, 'wb') as f:
             json.dump({fid: obj.__dict__ for fid, obj in
                        self.file_list.iteritems()}, f)
 
@@ -58,10 +74,10 @@ class DriveServiceWorker(object):
 
     def is_downloadable(self, k, v, stored_file_meta):
         if k not in stored_file_meta:
-            log.info("Found item new item: {}", self.file_list[k].title)
+            log.info('Found item new item: {}', self.file_list[k].title)
             return True
-        if v.modifiedDate != stored_file_meta[k]['modifiedDate']:
-            log.info("Found item change in: %s", v.title)
+        if v.modifiedDate != stored_file_meta[k]["modifiedDate"]:
+            log.info('Found item change in: %s', v.title)
             return True
 
     def filter_download_list(self):
@@ -76,14 +92,17 @@ class DriveServiceWorker(object):
                 if self.is_downloadable(k, v, stored_file_meta)}
 
     def write_to_fs(self, not_storage, item, content, dl_count, wr_count):
-        f_name = os.path.join(self.STORAGE_PATH, item.title + "." + item.ext)
+        storage_path = self.STORAGE_PATH
+        if item.orphaned:
+            storage_path += "orphaned"
+        f_name = os.path.join(storage_path, item.title + "." + item.ext)
         if not_storage and os.path.exists(f_name):
             log.error('File %s already exists', f_name)
             dl_count -= 1
         else:
-            with open(f_name, 'wb') as f:
-                    f.write(content)
-                    wr_count += 1
+            with open(f_name, "wb") as f:
+                f.write(content)
+                wr_count += 1
         return dl_count, wr_count
 
     def download_files(self):

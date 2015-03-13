@@ -5,6 +5,7 @@
 # TODO update meta.json if new files downloaded
 # TODO move file meta storage to sql database
 # TODO setup CLI and ability to choose save directory
+# TODO add support for slides
 
 
 # Configured logger before importing modules
@@ -14,6 +15,8 @@ from utils.console_status import BarLoading
 initialize_logger('logs')
 
 import drive_service
+
+
 
 if __name__ == '__main__':
     working = BarLoading()
