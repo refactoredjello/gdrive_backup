@@ -12,6 +12,7 @@ class DriveTypes(object):
         self.modifiedDate = data['modifiedDate']
         self.id = data['id']
         self.mimeType = data['mimeType']
+        self.orphaned = False
         if data['parents']:
             self.parents = data['parents'][0]  # Only store the first parent
         else:

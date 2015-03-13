@@ -1,7 +1,5 @@
 # TODO create tests - esp. for checking modified date and new file downloads
 # TODO work out why there are duplicates on first download
-# TODO save locally in a folder that matches the drive folder
-# TODO add local file locations to data storage
 # TODO update meta.json if new files downloaded
 # TODO move file meta storage to sql database
 # TODO setup CLI and ability to choose save directory
