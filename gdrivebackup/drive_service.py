@@ -14,7 +14,7 @@ log = logging.getLogger("main." + __name__)
 
 
 def build_service():
-    """returns a  drive service object with an authorized http object"""
+    """Returns a drive service object with an authorized http object"""
     credentials = Authorize().get_credentials()
     http_auth = credentials.authorize(Http())
     return build('drive', 'v2', http=http_auth)
@@ -41,15 +41,18 @@ class DriveServiceWorker(object):
             payload["maxResults"] = 10
 
         items = self.drive_files_service.list(**payload).execute()["items"]
-        print 'Downloaded file meta data...'
-        if DEBUG_FLAG:
-            print pprint(items)
         return items
 
     def _get_folder_list(self):
-        payload_query = "mimeType = 'application/vnd.google-apps.folder'"
-        items = self._get_drive_list(payload_query)
-        return {d["id"]: DriveFolders(data=d) for d in items}
+        """ Returns a dict of folders objects with their drive id as key
+        only if the folder is found in a downloadable file"""
+        pl_q = "mimeType = 'application/vnd.google-apps.folder'"
+        folders = {d["id"]: DriveFolders(data=d) for d in
+                   self._get_drive_list(pl_q)}
+        file_folders = [f.parents["id"] for f in self.file_list.values()
+                        if f.parents]
+        return {fid: obj for fid, obj in folders.iteritems()
+                if id in file_folders}
 
     def _get_file_list(self):
         payload_query = (

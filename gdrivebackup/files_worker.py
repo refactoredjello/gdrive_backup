@@ -12,11 +12,11 @@ class DriveTypes(object):
         self.modifiedDate = data['modifiedDate']
         self.id = data['id']
         self.mimeType = data['mimeType']
-        self.parents = data['parents']
-
-
-class DriveFolders(DriveTypes):
-    pass
+        if data['parents']:
+            self.parents = data['parents'][0]  # Only store the first parent
+        else:
+            self.parents = []
+            self.orphaned = True  # locally generated field
 
 
 class DriveFiles(DriveTypes):
@@ -24,11 +24,9 @@ class DriveFiles(DriveTypes):
         self.data = data
         DriveTypes.__init__(self, self.data)
         self.exportLinks = data['exportLinks']
-        self.eurl = '' # locally generated field
-        self.ext = '' # locally generated field
+        self.eurl = ''  # locally generated field
+        self.ext = ''  # locally generated field
         self._get_export_links()
-        if self.parents == []:
-            self.orphaned = True # locally generated field
 
     def _get_export_links(self):
         export_type_dict = {
@@ -45,3 +43,7 @@ class DriveFiles(DriveTypes):
         export_key = export_type_dict[self.mimeType]
         self.eurl = self.exportLinks[export_key[0]]
         self.ext = export_key[1]
+
+
+class DriveFolders(DriveTypes):
+    pass
