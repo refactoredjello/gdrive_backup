@@ -1,9 +1,12 @@
 import webbrowser
+import logging
+from httplib2 import Http
 
 from oauth2client.file import Storage
 from oauth2client.client import flow_from_clientsecrets
+from apiclient.discovery import build
 
-import logging
+
 # TODO add error handling and logging
 log = logging.getLogger('main.' + __name__)
 
@@ -28,3 +31,10 @@ class Authorize(object):
             return credentials
         if credentials is not None:
             return credentials
+
+
+def build_service(authorization):
+    """Returns a drive service object with an authorized http object"""
+    credentials = authorization.get_credentials()
+    http_auth = credentials.authorize(Http())
+    return build('drive', 'v2', http=http_auth)

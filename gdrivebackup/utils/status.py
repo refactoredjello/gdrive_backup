@@ -27,6 +27,6 @@ class BarLoading(threading.Thread):
             time.sleep(0.1)
             i += 1
         if self.kill:
-            print '\b\b\b\b ABORT!',
+            print 'ABORT! \r',
         else:
-            print '\b\b done!',
+            print 'done! \r',
