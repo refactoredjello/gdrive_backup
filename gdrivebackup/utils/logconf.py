@@ -9,7 +9,7 @@ def initialize_logger(log_dir):
 
     main_log = logging.getLogger('main')
     main_log.setLevel(logging.DEBUG)
-    _format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s:'
+    _format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: '
                                 '%(message)s')
 
     log_name = datetime.now().strftime('%Y_%m_%d-%H-%M_%S') + '.log'

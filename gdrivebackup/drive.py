@@ -4,27 +4,28 @@ log = logging.getLogger('main.' + __name__)
 
 
 class DriveTypes(object):
-    def __init__(self, data):
-        """
-        :param data: google drive file meta data
-        """
-        self.title = data['title'].translate({ord(c): u'_' for c in u'/|/'})
-        self.modifiedDate = data['modifiedDate']
-        self.id = data['id']
-        self.mimeType = data['mimeType']
+    def __init__(self, id="", title="", modifiedDate="", mimeType="",
+                 parents=[], labels=[]):
+
+        self.id = id
+        self.title = title.translate({ord(c): u'_' for c in u'/|/'})
+        self.modifiedDate = modifiedDate
+        self.mimeType = mimeType
         self.orphaned = False
-        if data['parents']:
-            self.parents = data['parents'][0]  # Only store the first parent
-        else:
-            self.parents = []
+
+        self.labels = labels
+
+        if not parents:
+            self.parents = parents
             self.orphaned = True  # locally generated field
+        else:
+            self.parents = parents[0]
 
 
 class DriveFiles(DriveTypes):
-    def __init__(self, data):
-        self.data = data
-        DriveTypes.__init__(self, self.data)
-        self.exportLinks = data['exportLinks']
+    def __init__(self, exportLinks=[], **kwargs):
+        DriveTypes.__init__(self, **kwargs)
+        self.exportLinks = exportLinks
         self.eurl = ''  # locally generated field
         self.ext = ''  # locally generated field
         self._get_export_links()
@@ -40,7 +41,7 @@ class DriveFiles(DriveTypes):
                 '.sheet', 'xlsx'
             )
         }
-        # parse exporting data and file extension
+        # parse for exporting link and file extension
         export_key = export_type_dict[self.mimeType]
         self.eurl = self.exportLinks[export_key[0]]
         self.ext = export_key[1]
