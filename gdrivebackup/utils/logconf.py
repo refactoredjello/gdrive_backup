@@ -19,7 +19,10 @@ def initialize_logger(log_dir):
 
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
-    ch.setFormatter(_format)
+    ch.setFormatter(logging.Formatter('%(message)s'))
 
     main_log.addHandler(ch)
     main_log.addHandler(fh)
+
+    #use logging in __main__
+    return main_log

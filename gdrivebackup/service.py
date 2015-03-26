@@ -5,8 +5,10 @@ import json
 import logging
 
 from drive import DriveFolders, DriveFiles
+from utils.tqdm import tqdm
 
-DEBUG_FLAG = False
+
+
 log = logging.getLogger("main." + __name__)
 
 
@@ -38,17 +40,19 @@ class DriveProvider(object):
                              'parents(id,isRoot))'
                    }
 
-        if DEBUG_FLAG:
-            payload["maxResults"] = 10
+
 
         return self.files_service.list(**payload).execute()["items"]
 
     def _get_folder_list(self):
         pl_q = "mimeType = 'application/vnd.google-apps.folder'"
+        log.info('Querying for folders')
         folders = {d["id"]: DriveFolders(**d) for d in
                    self._get_drive_list(pl_q)}
+
         file_folders = [f.parents["id"] for f in self.file_list.values()
                         if f.parents]
+
         return {fid: obj for fid, obj in folders.iteritems()
                 if id in file_folders}
 
@@ -60,7 +64,9 @@ class DriveProvider(object):
             "or mimeType = 'application/vnd.google-apps.spreadsheet'"
             ")"
         )
+        log.info('Querying for matching files')
         items = self._get_drive_list(payload_query)
+
         return {d["id"]: DriveFiles(**d) for d in items}
 
     def _store_file_list(self):
@@ -85,8 +91,6 @@ class DriveProvider(object):
 
             elif new_meta["modifiedDate"] != current_meta["modifiedDate"]:
                 json_data[fid]["modifiedDate"] = new_meta["modifiedDate"]
-
-
 
     def filter_download_list(self):
 
@@ -116,7 +120,7 @@ class DriveProvider(object):
         f_name = os.path.join(storage_path, item.title + "." + item.ext)
 
         if not_storage and os.path.exists(f_name):
-            log.error('File %s already exists', f_name)
+            log.error('\rFile %s already exists', f_name)
         else:
             with open(f_name, "wb") as f:
                 f.write(content)
@@ -147,7 +151,7 @@ class DriveProvider(object):
         if len(export_list) != 0:
             log.info('Starting Download of %s files...', len(export_list))
 
-            for item in export_list.values():
+            for item in tqdm(export_list.values(), leave=True):
                 dl_count += 1
                 log.debug('Trying Download: %s File Name: %s', dl_count,
                           item.title)
