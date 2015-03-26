@@ -1,13 +1,9 @@
-# TODO test updating json file - use a max results list or update actual
-# drive files
 import os
 import json
 import logging
 
 from drive import DriveFolders, DriveFiles
 from utils.tqdm import tqdm
-
-
 
 log = logging.getLogger("main." + __name__)
 
@@ -39,8 +35,6 @@ class DriveProvider(object):
                              'mimeType,modifiedDate,labels,'
                              'parents(id,isRoot))'
                    }
-
-
 
         return self.files_service.list(**payload).execute()["items"]
 
@@ -75,40 +69,56 @@ class DriveProvider(object):
                        self.file_list.iteritems()}, f)
 
     def file_list_from_storage(self):
+        log.info('Loading meta.json')
         with open(self.json_storage, 'r') as f:
             return json.load(f)
 
-    def _update_json(self, new_files):
-        json_data = self.file_list_from_storage()
-        for fid, obj in new_files.iteritems():
-            new_meta = obj.__dict__
-            current_meta = json_data[fid]
+    def _update_json(self, stored_file_meta, new_files, changed_files):
+        json_data = stored_file_meta
 
-            log.debug("Old Data: %s /n New Meta: %s", current_meta, new_meta)
+        for fid, fobj in changed_files.iteritems():
+            new_meta = fobj.modifiedDate
+            current = json_data[fid]["modifiedDate"]
+            log.info("Current Data: %s --- New Data: %s", current, new_meta)
+            json_data[fid]["modifiedDate"] = new_meta
 
-            if fid not in json_data:
-                json_data[fid] = new_meta
+        for fid, fobj in new_files.iteritems():
+            log.info("New file added to json named: %s", fobj.title)
+            json_data[fid] = fobj.__dict__
 
-            elif new_meta["modifiedDate"] != current_meta["modifiedDate"]:
-                json_data[fid]["modifiedDate"] = new_meta["modifiedDate"]
+        with open(self.json_storage, 'wb') as f:
+            json.dump(json_data, f)
 
-    def filter_download_list(self):
+    def filter_download_list(self, stored_file_meta):
 
-        def is_downloadable(k, v, stored_file_meta):
+        def is_new(k, v, stored_file_meta):
             if k not in stored_file_meta:
-                log.info('Found  new item: %s', v.title)
+                log.info('Found new file: %s', v.title)
                 return True
 
+        def is_changed(k, v, stored_file_meta, new):
+            if k in new:
+                return False
             if v.modifiedDate != stored_file_meta[k]["modifiedDate"]:
-                log.info('Found item change in: %s', v.title)
+                log.info('Found file change in: %s', v.title)
                 return True
 
-        stored_file_meta = self.file_list_from_storage()
-        log.info('Json File Loaded \n %s entries found in meta.json',
-                 len(stored_file_meta))
+        log.info('%s entries found', len(stored_file_meta))
+        print "\n\n"
+        log.info('Searching for new or changed files...')
 
-        return {k: v for k, v in self.file_list.iteritems()
-                if is_downloadable(k, v, stored_file_meta)}
+        new = {k: v for k, v in self.file_list.iteritems()
+               if is_new(k, v, stored_file_meta)}
+
+        changed = {k: v for k, v in self.file_list.iteritems()
+                   if is_changed(k, v, stored_file_meta, new)}
+
+        log.info('Found: %s new files, %s changed files', len(new),
+                 len(changed))
+        if len(changed) + len(new):
+            self._update_json(stored_file_meta, new, changed)
+
+        return new, changed
 
     def write_to_fs(self, not_storage, item, content, wr_count):
 
@@ -131,25 +141,26 @@ class DriveProvider(object):
     def download_files(self):
 
         export_list = self.file_list
-
         not_storage = True
 
         if os.path.isfile(self.json_storage):
-            export_list = self.filter_download_list()
-            self._update_json(export_list)
-            log.info('Getting files meta from storage')
+            print "\n\n"
+            log.info('Getting files meta data from storage.')
+            stored_file_meta = self.file_list_from_storage()
+            new, changed = self.filter_download_list(stored_file_meta)
+            export_list = new.copy()
+            export_list.update(changed)
             not_storage = False
         else:
             self._store_file_list()
-
-        log.info('Number of items found: %s', len(export_list))
 
         dl_success = 0
         dl_count = 0
         wr_count = 0
 
-        if len(export_list) != 0:
-            log.info('Starting Download of %s files...', len(export_list))
+        if export_list:
+            print "\n\n"
+            log.info('Starting Download of %s file(s):', len(export_list))
 
             for item in tqdm(export_list.values(), leave=True):
                 dl_count += 1
@@ -167,5 +178,5 @@ class DriveProvider(object):
                 except Exception, e:
                     log.exception('%s', e)
 
-        log.info('%s files downloaded successfully', dl_success)
-        log.info('%s files writen successfully', wr_count)
+            log.info('%s files downloaded successfully', dl_success)
+            log.info('%s files writen successfully', wr_count)
