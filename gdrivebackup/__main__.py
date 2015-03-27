@@ -1,4 +1,5 @@
-# TODO update meta.json if new files downloaded
+# TODO move all the dir configurations
+# TODO save files based on drive folder tree
 # TODO move file meta storage to sql database
 # TODO setup CLI and ability to choose save directory
 # TODO add support for slides
