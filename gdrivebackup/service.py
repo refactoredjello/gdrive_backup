@@ -144,7 +144,7 @@ class DriveProvider(object):
         not_storage = True
 
         if os.path.isfile(self.json_storage):
-            print "\n\n"
+            print "\n"
             log.info('Getting files meta data from storage.')
             stored_file_meta = self.file_list_from_storage()
             new, changed = self.filter_download_list(stored_file_meta)
@@ -159,7 +159,7 @@ class DriveProvider(object):
         wr_count = 0
 
         if export_list:
-            print "\n\n"
+            print "\n"
             log.info('Starting Download of %s file(s):', len(export_list))
 
             for item in tqdm(export_list.values(), leave=True):
