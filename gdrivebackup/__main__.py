@@ -1,8 +1,13 @@
-# Todo create directory of folders
-# Todo handle file moved to another folder
+# Todo create folders objects from searching folders until you get to root
+# Todo update json with new data
+# Todo create directory of folders in fs
+# Todo get export url
+# Todo write files to fs
+# Todo handle if file moved to another folder
 
+# TODO setup CLI and ability to choose save directory and type of file export
 # TODO move file meta storage to sql database
-# TODO setup CLI and ability to choose save directory
+
 # Note: Does not look for multiple parents of a file or folder
 
 
@@ -11,6 +16,7 @@ initialize_logger('logs') # initialize main log  before importing modules
 
 from configurator import ensure_dir, path_config
 from handlers import DataFilter
+from folders import Folder
 from service import DriveProvider, FileDownloader
 
 from pprint import pprint
@@ -19,18 +25,21 @@ if __name__ == '__main__':
     STORAGE_PATH, ORPHANED_PATH, JSON_PATH = path_config("..\\file_store")
     ensure_dir((STORAGE_PATH, ORPHANED_PATH))
 
-    Go = DriveProvider()
+    go = DriveProvider()
 
     # Create a data filter object
-    Handler = DataFilter(JSON_PATH, Go.get_files(), Go.get_folders(),
-                         Go.get_root())
+    handler = DataFilter(JSON_PATH, go.get_files(), go.get_folders(),
+                         go.get_root())
 
-    filtered = Handler()
-    if filtered:
-        files, folders = filtered
+    drive_data = handler() # get filtered files and folders
+
+    if drive_data:
+        files, found_folders = drive_data
+        #create folders
+        folders = Folder.make_folders(*found_folders) # dict of folder objs
         print len(folders)
-        print len(Handler.file_meta)
-
+        print len(files)
+        # create files
 
 
 

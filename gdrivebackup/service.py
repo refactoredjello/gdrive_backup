@@ -37,7 +37,8 @@ class DriveProvider(Authorize):
         """
         print 'Downloading {} Data...'.format(get_type)
 
-        payload = {"q": 'trashed=False and ' + payload_query,
+        payload = {"maxResults": 1000,
+                   "q": 'trashed=False and ' + payload_query,
                    "fields": 'items(id,title,exportLinks,'
                              'mimeType,modifiedDate,labels,'
                              'parents(id,isRoot)), nextPageToken'
@@ -59,12 +60,12 @@ class DriveProvider(Authorize):
         for item in items:
             if item["parents"]:
                 item["parents"] = item["parents"][0]
-
+        print "Done!"
         return {item.pop("id"): item for item in items}
 
     def get_folders(self):
         payload = "mimeType = 'application/vnd.google-apps.folder'"
-        return self._get_meta(payload, "folders")
+        return self._get_meta(payload, "folder")
 
     def get_files(self):
         payload_query = (
@@ -72,7 +73,7 @@ class DriveProvider(Authorize):
             "or mimeType = 'application/vnd.google-apps.presentation'"
             "or mimeType = 'application/vnd.google-apps.spreadsheet')"
             )
-        return self._get_meta(payload_query, "files")
+        return self._get_meta(payload_query, "file")
 
     def __call__(self):
         return self.service

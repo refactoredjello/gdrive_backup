@@ -1,42 +1,41 @@
 import os
 import json
 
-from folders import Folder
-
-
 class DataHandler(object):
-    def __init__(self, JSON_PATH, file_meta, folder_meta, drive_root):
+    """All file and folder data passed throughout the obj is in the form of a
+    dict with drive id as key and meta data as value. """
+
+    def __init__(self, json_path, file_meta, folder_meta, drive_root):
         self.drive_root = drive_root
         self.file_meta = file_meta
         self.folder_meta = folder_meta
-        self.data_local = os.path.isfile(JSON_PATH)
-        self.json_path = JSON_PATH
+        self.data_local = os.path.isfile(json_path)
+        self.json_path = json_path
 
-    def to_json(self):
+    def to_json(self, files_dump):
         with open(self.json_path, 'wb') as f:
-            json.dump(self.file_meta, f, indent=0)
+            json.dump(files_dump, f, indent=0)
 
     def from_json(self):
         with open(self.json_path, 'r') as f:
             return json.load(f)
 
 
-
-
 class DataFilter(DataHandler):
-    """
-    Handlers for filtering files and folders.  It will find new or changed
-    files from a list of drive files, and folders which are found in a
-    file's meta data.
+    """Filters and parses downloaded folder and file data in preparation for
+    writing to the filesystem. """
 
-    :param drive_meta: a list of drive files as dicts
-    """
     def __init__(self, *args):
         DataHandler.__init__(self, *args)
 
         self.filtered = ()
-        self.folders = {} # filtered folders as objects
+        self.folders = ()
         self.stored = {}
+
+        # store files and folders which have parents
+        r = self._remove_orphans
+        self.parented_files = r(self.file_meta)
+        self.parented_folders = r(self.folder_meta)
 
     def _is_new(self, fid):
         return fid not in self.stored.keys()
@@ -45,64 +44,66 @@ class DataFilter(DataHandler):
         stored = self.stored[fid]
         return data["modifiedDate"] != stored["modifiedDate"]
 
-    def _filter(self):
-        """filters out files which have been changed or are new since last
-        download"""
-        for fid, data in self.file_meta.iteritems():
+    def _filter_files(self):
+        """Filters out files which have been changed or are new since last
+        download."""
+        for fid, v in self.parented_files.iteritems():
             if self._is_new(fid):
-                self.filtered += (fid, data),
+                print 'Found new file: ', v["title"]
+                self.filtered += (fid, v),
 
-            elif self._is_changed(fid, data):
-                self.filtered += (fid, data),
+            elif self._is_changed(fid, v):
+                print 'Found changed file: ', v["title"]
+                self.filtered += (fid, v),
 
-    def _build_folders(self):
-        """Create a dict of folder objects if folder is found to contain a
-        google format document, sheet, or slide.
+    @staticmethod
+    def _remove_orphans(meta):
+        return {fid: v for fid, v in meta.iteritems() if v.get("parents")}
 
-        Note: Discards folders which have no parent or not root. This may mean
-        folders shared with you.
+    def _find_parents(self, folder):
+        raise NotImplementedError
+
+    def _find_folders(self):
+        """Creates two dicts, a dict of roots and a dict of children that
+        are found in a file's meta data.
+
+        Note: Discards folders which have no parent or is not a root. This may
+        mean folders shared with you.
         """
-        roots = []
-        children = []
-        for item in self.file_meta.values():
+
+        roots = {}
+        children = {}
+        for item in self.parented_files.values():
             parents = item["parents"]
-            if not parents:
-                continue
 
             fid, is_root = parents["id"], parents["isRoot"]
             if (fid in children or roots) or fid == self.drive_root:
                 continue
 
+            folder = self.parented_folders.get(fid)
             if is_root:
-                roots.append(fid)
-            elif fid in self.folder_meta.keys():
-                children.append(fid)
+                roots[fid] = folder
+            elif folder:
+                children[fid] = folder
 
-        for fid in roots:
-            folder = self.folder_meta[fid]
-            title = folder["title"]
-            self.folders[fid] = Folder(fid, None, title, True)
-
-        for fid in children:
-            folder = self.folder_meta[fid]
-            title = folder["title"]
-            parents = folder["parents"]
-            self.folders[fid] = Folder(fid, parents, title, False)
+        self.folders = children, roots,
+        self._find_parents()
 
     def __call__(self):
-        if not self.data_local:
-            self.to_json()
-            return None
+        """
+        Starts the filter using data from downloaded via the DriveProvider.
 
-        if self.data_local:
+        :returns: two dicts, 1.files 2.folders
+        """
+        if not self.data_local:  # filter on first run
+            print "First run!"
+            self.to_json(self.parented_files)
+            self._find_folders()
+            return self.parented_files, self.folders
+
+        if self.data_local:  # filter with local data to compare
+            print "Using json store!"
             self.stored = self.from_json()
-            self._filter()
-            self._build_folders()
+            self._filter_files()
+            self._find_folders()
             return self.filtered, self.folders
-
-
-
-
-
-
-

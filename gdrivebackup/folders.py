@@ -1,7 +1,12 @@
 class Folder(object):
-    def __init__(self, fid="", parents="", title="", is_root=False):
+    folders = {}
+
+    def __init__(self, fid="", parents=None, title="", is_root=False):
         self.fid = fid
-        self.parent = parents["id"]
+        if parents:
+            self.parent = parents["id"]
+        else:
+            self.parent = []
         self.title = title
         self._child = []
         self.is_root = is_root
@@ -15,18 +20,16 @@ class Folder(object):
     def child(self, child_id):
         self._child.append(child_id)
 
-    @staticmethod
-    def make_nodes(folders):
-        for folder in folders:
-            if folder.is_root:
-                continue
-            for other in folders:
-                if other == folder:
-                    continue
-                if folder.id == other.parent:
-                    folder.child = other
+    @classmethod
+    def make_folders(cls, children, roots):
+        """Creates folder objects found by the DataFilter"""
+        for fid, folder in roots.iteritems():
+            title = folder["title"]
+            cls.folders[fid] = Folder(fid, None, title, True)
 
+        for fid, folder in children.iteritems():
+            title = folder["title"]
+            parents = folder["parents"]
+            cls.folders[fid] = Folder(fid, parents, title, False)
 
-
-
-
+        return cls.folders

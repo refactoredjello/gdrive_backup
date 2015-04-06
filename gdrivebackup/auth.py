@@ -10,9 +10,9 @@ log = logging.getLogger('main.' + __name__)
 
 class Authorize(object):
     def __init__(self):
-        self.storage = Storage('credentials')
+        self.storage = Storage('.user\\credentials')
         self.flow = flow_from_clientsecrets(
-            'client_secrets.json',
+            '.user\\client_secrets.json',
             'https://www.googleapis.com/auth/drive.readonly',
             redirect_uri='urn:ietf:wg:oauth:2.0:oob'
         )
