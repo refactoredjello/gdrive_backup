@@ -1,5 +1,4 @@
 # Todo create folders objects from searching folders until you get to root
-# Todo get export url
 # Todo add loggers
 # Todo update json with new data
 # Todo create directory of folders in fs
@@ -23,22 +22,23 @@ from service import DriveProvider, FileDownloader
 from pprint import pprint
 
 if __name__ == '__main__':
-    STORAGE_PATH, ORPHANED_PATH, JSON_PATH = path_config("..\\file_store")
-    ensure_dir((STORAGE_PATH, ORPHANED_PATH))
+    storage_path, json_path = path_config("..\\file_store")
+    ensure_dir([storage_path,])
 
     go = DriveProvider()
 
     # Create a data filter object
-    handler = DataFilter(JSON_PATH, go.get_files(), go.get_folders(),
+    handler = DataFilter(json_path, go.get_files(), go.get_folders(),
                          go.get_root())
 
     drive_data = handler() # get filtered files and folders
 
     if drive_data:
         dl_list, found_folders = drive_data
+        pprint(found_folders)
         #create folders
         folders = Folder.make_folders(*found_folders) # dict of folder objs
-        print len(folders)
+
         pprint(dl_list)
         # create files
 

@@ -1,9 +1,10 @@
 import os
 import json
 
+
 class DataHandler(object):
-    """All file and folder data passed throughout the obj is in the form of a
-    dict with drive id as key and meta data as value. """
+    """All file and folder data passed throughout the instance is in the form
+    of a dict with drive id as key and meta data as value. """
 
     def __init__(self, json_path):
         self.data_local = os.path.isfile(json_path)
@@ -20,20 +21,35 @@ class DataHandler(object):
 
 class DataFilter(DataHandler):
     """Filters and parses downloaded folder and file data in preparation for
-    writing to the filesystem. """
+    writing to the filesystem.
+    """
 
     def __init__(self, json_path, file_meta, folder_meta, drive_root):
         DataHandler.__init__(self, json_path)
+        self.drive_root = drive_root
 
+        # Removes orphans, and is used as base data throughout filter object.
+        self.parented_folders = {fid: v for fid, v in folder_meta.iteritems()
+                                 if v.get("parents")}
+        self.parented_files = {fid: v for fid, v in file_meta.iteritems() if
+                               v.get("parents")}
+        self._shared_orphans()  # removes orphans shared via link
+
+        # secondary filter stores
         self.filtered = ()
-        self.folders = () # a tuple containing two dicts (roots, children)
         self.stored = {}
+        self.children = {}
+        self.roots = {}
+
+        # returned attributes if instance is called
+        self.folders = () # a tuple containing two dicts (roots, children)
         self.dl_list = {}  # key : fid, value: {download url, file extension}
 
-        # store only files and folders which have parents
-        self.parented_files = self._remove_orphans(file_meta)
-        self.parented_folders = self._remove_orphans(folder_meta)
-        self.drive_root = drive_root
+    def _shared_orphans(self):
+        for fid, v in self.parented_files.copy().iteritems():
+            pid = v["parents"]["id"]
+            if pid not in self.parented_folders:
+                self.parented_files.pop(fid)
 
     def _is_new(self, fid):
         return fid not in self.stored.keys()
@@ -55,34 +71,6 @@ class DataFilter(DataHandler):
                 print 'Found changed file: ', v["title"]
                 self.filtered += (fid, v),
 
-    @staticmethod
-    def _remove_orphans(meta={}):
-        return {fid: v for fid, v in meta.iteritems() if v.get("parents")}
-
-    def _find_parents(self, folder):
-        pass
-
-    def _find_folders(self):
-        """Creates a tuple of two dicts, a dict of roots and a dict of
-        children that are found in a file's meta data."""
-
-        roots = {}
-        children = {}
-        for item in self.parented_files.values():
-            parents = item["parents"]
-            fid, is_root = parents["id"], parents["isRoot"]
-
-            if (fid in children or roots) or fid == self.drive_root:
-                continue
-
-            folder = self.parented_folders.get(fid)
-            if is_root:
-                roots[fid] = folder
-            elif folder:
-                children[fid] = folder
-
-        self.folders = children, roots,
-
     def _get_export_links(self):
         export_types = {
             'application/vnd.google-apps.document': (
@@ -101,7 +89,7 @@ class DataFilter(DataHandler):
         }
 
         to_parse = self.parented_files
-        if not self.data_local:
+        if self.data_local:
             to_parse = self.filtered
 
         for fid, v in to_parse.iteritems():
@@ -109,6 +97,47 @@ class DataFilter(DataHandler):
             url = v["exportLinks"][export_type]
 
             self.dl_list[fid] = {'url': url, 'ext': ext, 'title': v["title"]}
+
+    def _find_parents(self, folder):
+        parents = folder["parents"]
+        pid, is_root = parents["id"], parents["isRoot"]
+        if pid in self.children or pid in self.roots or pid == self.drive_root:
+            return None
+
+        if is_root:
+            self.roots[pid] = self.parented_folders[pid]
+        else:
+            self.children[pid] = self.parented_folders[pid]
+
+        self._find_parents(folder)
+
+    def _find_folders(self):
+        """Creates a tuple with two dicts, one of root folders and one of
+        children, either of which were found in a file's meta data."""
+
+        # folders found in file meta data
+        for item in self.parented_files.values():
+            parents = item["parents"]
+            pid, is_root = parents["id"], parents["isRoot"]
+
+            if (pid in self.children or self.roots) or pid == self.drive_root:
+                continue
+
+            folder = self.parented_folders.get(pid)
+            # skip items shared with you via link
+            if not folder:
+                continue
+
+            if is_root:
+                self.roots[pid] = folder
+            else:
+                self.children[pid] = folder
+
+        # find the remaining parent folders up to drive root
+        for folder in self.children.copy().values():
+            self._find_parents(folder)
+
+        self.folders = self.children, self.roots,
 
     def __call__(self):
         """

@@ -8,8 +8,8 @@ class Folder(object):
         else:
             self.parent = []
         self.title = title
-        self._child = []
         self.is_root = is_root
+        self._child = []
 
     @property
     def child(self):

@@ -42,7 +42,7 @@ class DriveProvider(Authorize):
             "fields": 'items(id,title,exportLinks,'
                       'mimeType,modifiedDate,labels,'
                       'parents(id,isRoot)), nextPageToken'
-           }
+            }
         items = []
         page_token = None
         while True:
