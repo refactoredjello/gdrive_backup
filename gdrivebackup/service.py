@@ -10,11 +10,10 @@ log = logging.getLogger("main." + __name__)
 
 
 class DriveProvider(Authorize):
-    """
-    Provides an api for getting meta data of folders or files that are in
-    google docs, slides,or sheets format.
+    """Provides an api for getting meta data of  files that are in
+    google docs, slides,or sheets format, and drive folders.
 
-    :return authorized drive service
+    :return: authorized drive service
     """
     def __init__(self):
         Authorize.__init__(self)
@@ -81,9 +80,9 @@ class DriveProvider(Authorize):
 
 
 class FileDownloader(object):
-    """
-    Downloads a list of files using an export url.
-    :return a tuple of downloaded file content objects and it's drive id
+    """Downloads a list of files using an export url.
+
+    :return: a tuple of downloaded file content objects and it's drive id
     """
     def __init__(self):
         self.dl_count = 0
@@ -94,9 +93,9 @@ class FileDownloader(object):
         :param dl_list: dict with file id as key and export url as value
         :param service: an authorized drive service object
         """
-        for fid, url in tqdm(dl_list.values(), leave=True,):
+        for fid, v in tqdm(dl_list.iteritens(), leave=True,):
             # Download file using an authorized http object
-            response, content = service._http.request(url)
+            response, content = service._http.request(v.get("url"))
 
             if response.status == 200:
                 self.downloaded_content += ((fid, content),)

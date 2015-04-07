@@ -35,11 +35,11 @@ if __name__ == '__main__':
     drive_data = handler() # get filtered files and folders
 
     if drive_data:
-        files, found_folders = drive_data
+        dl_list, found_folders = drive_data
         #create folders
         folders = Folder.make_folders(*found_folders) # dict of folder objs
         print len(folders)
-        print len(files)
+        pprint(dl_list)
         # create files
 
 

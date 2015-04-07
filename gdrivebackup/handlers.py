@@ -5,10 +5,7 @@ class DataHandler(object):
     """All file and folder data passed throughout the obj is in the form of a
     dict with drive id as key and meta data as value. """
 
-    def __init__(self, json_path, file_meta, folder_meta, drive_root):
-        self.drive_root = drive_root
-        self.file_meta = file_meta
-        self.folder_meta = folder_meta
+    def __init__(self, json_path):
         self.data_local = os.path.isfile(json_path)
         self.json_path = json_path
 
@@ -25,17 +22,18 @@ class DataFilter(DataHandler):
     """Filters and parses downloaded folder and file data in preparation for
     writing to the filesystem. """
 
-    def __init__(self, *args):
-        DataHandler.__init__(self, *args)
+    def __init__(self, json_path, file_meta, folder_meta, drive_root):
+        DataHandler.__init__(self, json_path)
 
         self.filtered = ()
-        self.folders = ()
+        self.folders = () # a tuple containing two dicts (roots, children)
         self.stored = {}
+        self.dl_list = {}  # key : fid, value: {download url, file extension}
 
-        # store files and folders which have parents
-        r = self._remove_orphans
-        self.parented_files = r(self.file_meta)
-        self.parented_folders = r(self.folder_meta)
+        # store only files and folders which have parents
+        self.parented_files = self._remove_orphans(file_meta)
+        self.parented_folders = self._remove_orphans(folder_meta)
+        self.drive_root = drive_root
 
     def _is_new(self, fid):
         return fid not in self.stored.keys()
@@ -47,6 +45,7 @@ class DataFilter(DataHandler):
     def _filter_files(self):
         """Filters out files which have been changed or are new since last
         download."""
+
         for fid, v in self.parented_files.iteritems():
             if self._is_new(fid):
                 print 'Found new file: ', v["title"]
@@ -57,26 +56,22 @@ class DataFilter(DataHandler):
                 self.filtered += (fid, v),
 
     @staticmethod
-    def _remove_orphans(meta):
+    def _remove_orphans(meta={}):
         return {fid: v for fid, v in meta.iteritems() if v.get("parents")}
 
     def _find_parents(self, folder):
-        raise NotImplementedError
+        pass
 
     def _find_folders(self):
-        """Creates two dicts, a dict of roots and a dict of children that
-        are found in a file's meta data.
-
-        Note: Discards folders which have no parent or is not a root. This may
-        mean folders shared with you.
-        """
+        """Creates a tuple of two dicts, a dict of roots and a dict of
+        children that are found in a file's meta data."""
 
         roots = {}
         children = {}
         for item in self.parented_files.values():
             parents = item["parents"]
-
             fid, is_root = parents["id"], parents["isRoot"]
+
             if (fid in children or roots) or fid == self.drive_root:
                 continue
 
@@ -87,31 +82,54 @@ class DataFilter(DataHandler):
                 children[fid] = folder
 
         self.folders = children, roots,
-        self._find_parents()
 
     def _get_export_links(self):
-            to_parse = self.parented_files
-            if not self.data_local:
-                to_parse = self.filtered
+        export_types = {
+            'application/vnd.google-apps.document': (
+                'application/vnd.openxmlformats-officedocument.wordprocessingml'
+                '.document', 'docx'
+            ),
+            'application/vnd.google-apps.spreadsheet': (
+                'application/vnd.openxmlformats-officedocument.spreadsheetml'
+                '.sheet', 'xlsx'
+            ),
+            'application/vnd.google-apps.presentation': (
+                'application/vnd.openxmlformats-officedocument.presentationml'
+                '.presentation', 'pptx'
+            )
 
-            return {fid, v["exportLinks"][]}
+        }
 
+        to_parse = self.parented_files
+        if not self.data_local:
+            to_parse = self.filtered
+
+        for fid, v in to_parse.iteritems():
+            export_type, ext = export_types.get(v["mimeType"])
+            url = v["exportLinks"][export_type]
+
+            self.dl_list[fid] = {'url': url, 'ext': ext, 'title': v["title"]}
 
     def __call__(self):
         """
         Starts the filter using data downloaded via the DriveProvider.
 
-        :returns: two dicts, 1.files 2.folders
+        :returns:
+        1.Dict: file id as key, and dict of export url, file extension and
+        title as value.
+        2.Dict: filtered folders fid as key and it's downloaded meta data as
+        value.
         """
         if not self.data_local:  # filter on first run
             print "First run!"
             self.to_json(self.parented_files)
-            self._find_folders()
-            return self.parented_files, self.folders
 
-        if self.data_local:  # filter with local data to compare
+        if self.data_local:  # filter with local json
             print "Using json store!"
             self.stored = self.from_json()
             self._filter_files()
-            self._find_folders()
-            return self.filtered, self.folders
+
+        self._get_export_links()
+        self._find_folders()
+
+        return self.dl_list, self.folders
