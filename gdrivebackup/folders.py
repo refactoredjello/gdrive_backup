@@ -1,4 +1,6 @@
 class Folder(object):
+    """ Folder objects and methods, used to create the folder directory
+    tree"""
     folders = {}
 
     def __init__(self, fid="", parents=None, title="", is_root=False):
