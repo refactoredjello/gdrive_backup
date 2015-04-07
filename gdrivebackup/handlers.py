@@ -89,9 +89,17 @@ class DataFilter(DataHandler):
         self.folders = children, roots,
         self._find_parents()
 
+    def _get_export_links(self):
+            to_parse = self.parented_files
+            if not self.data_local:
+                to_parse = self.filtered
+
+            return {fid, v["exportLinks"][]}
+
+
     def __call__(self):
         """
-        Starts the filter using data from downloaded via the DriveProvider.
+        Starts the filter using data downloaded via the DriveProvider.
 
         :returns: two dicts, 1.files 2.folders
         """
