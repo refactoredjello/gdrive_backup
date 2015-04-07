@@ -1,5 +1,8 @@
 import os
 
+#
+# Functions to create filesystem structure and parse CLI args
+#
 
 def path_config(storage_path):
     json_path = os.path.join(storage_path, "meta.json")

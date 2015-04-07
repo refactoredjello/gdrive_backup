@@ -101,8 +101,11 @@ class DataFilter(DataHandler):
             self.dl_list[fid] = {'url': url, 'ext': ext, 'title': v["title"]}
 
     def _find_folders(self):
-        """Searches filtered files for folder ids and then recursively finds
-        their parent folders."""
+        """
+        Searches for folders in two steps:
+                1. Searches filtered files for parent ids
+                2. Recursively finds their parents up till root
+        """
 
         # set local vars for recursive scope
         parented_folders = self.parented_folders
@@ -120,7 +123,7 @@ class DataFilter(DataHandler):
                 children[node_id] = current_node
                 find_parents(parent_id, drive_root)
 
-        # find all the folders found in a file meta
+        # find all folders found in a file meta
         for folder_data in self.parented_files.values():
             pid = folder_data["parents"]["id"]
 
@@ -157,7 +160,7 @@ class DataFilter(DataHandler):
         title as value.
         2.Dict: filtered folders fid as key and it's downloaded meta data as
         value."""
-
+        print "Started filter"
         if not self.data_local:  # filter on first run
             print "First run!"
             self.to_json(self.parented_files)

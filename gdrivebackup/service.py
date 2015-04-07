@@ -31,7 +31,8 @@ class DriveProvider(Authorize):
 
     def _get_meta(self, payload_query, get_type):
         """
-        :param payload_query: type of meta data to get (folder or file)
+        :param payload_query: additional params to include in list request
+        :param get_type: type of download to include in console message
         :return: a dict of drive files and folders as dicts
         """
         print 'Downloading {} Data...'.format(get_type)

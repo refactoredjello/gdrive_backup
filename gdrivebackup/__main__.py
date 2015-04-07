@@ -1,15 +1,10 @@
-# Todo create folders objects from searching folders until you get to root
-# Todo add loggers
-# Todo update json with new data
 # Todo create directory of folders in fs
 # Todo write files to fs
-# Todo handle if file moved to another folder
-
+# Todo update json with new data
 # TODO setup CLI and ability to choose save directory and type of file export
+# Todo add loggers
+# Todo handle if file moved to another folder
 # TODO move file meta storage to sql database?
-
-# Note: Does not look for multiple parents of a file or folder
-
 
 from utils.logconf import initialize_logger
 initialize_logger('logs') # initialize main log  before importing modules
