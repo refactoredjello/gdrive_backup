@@ -12,9 +12,9 @@ class DataHandler(object):
         self.data_local = os.path.isfile(json_path)
         self.json_path = json_path
 
-    def to_json(self, files_dump):
+    def to_json(self, to_dump):
         with open(self.json_path, 'wb') as f:
-            json.dump(files_dump, f, indent=0)
+            json.dump(to_dump, f, indent=0)
 
     def from_json(self):
         with open(self.json_path, 'r') as f:

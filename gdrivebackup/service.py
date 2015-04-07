@@ -37,12 +37,13 @@ class DriveProvider(Authorize):
         """
         print 'Downloading {} Data...'.format(get_type)
 
-        payload = {"maxResults": 1000,
-                   "q": 'trashed=False and ' + payload_query,
-                   "fields": 'items(id,title,exportLinks,'
-                             'mimeType,modifiedDate,labels,'
-                             'parents(id,isRoot)), nextPageToken'
-                   }
+        payload = {
+            "maxResults": 1000,
+            "q": 'trashed=False and ' + payload_query,
+            "fields": 'items(id,title,exportLinks,'
+                      'mimeType,modifiedDate,labels,'
+                      'parents(id,isRoot)), nextPageToken'
+           }
         items = []
         page_token = None
         while True:
