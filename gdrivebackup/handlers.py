@@ -48,7 +48,7 @@ class DataFilter(DataHandler):
     def _shared_orphans(self):
         for fid, v in self.parented_files.copy().iteritems():
             pid = v["parents"]["id"]
-            if pid not in self.parented_folders:
+            if pid not in self.parented_folders and pid != self.drive_root:
                 self.parented_files.pop(fid)
 
     def _is_new(self, fid):
@@ -90,6 +90,9 @@ class DataFilter(DataHandler):
 
         to_parse = self.parented_files
         if self.data_local:
+            if not self.filtered:
+                raise Exception("self.filter does not have any new or changed "
+                                "items")
             to_parse = self.filtered
 
         for fid, v in to_parse.iteritems():
@@ -98,24 +101,23 @@ class DataFilter(DataHandler):
 
             self.dl_list[fid] = {'url': url, 'ext': ext, 'title': v["title"]}
 
-    def _find_parents(self, folder):
-        parents = folder["parents"]
-        pid, is_root = parents["id"], parents["isRoot"]
-        if pid in self.children or pid in self.roots or pid == self.drive_root:
-            return None
-
-        if is_root:
-            self.roots[pid] = self.parented_folders[pid]
-        else:
-            self.children[pid] = self.parented_folders[pid]
-
-        self._find_parents(folder)
-
     def _find_folders(self):
         """Creates a tuple with two dicts, one of root folders and one of
         children, either of which were found in a file's meta data."""
 
-        # folders found in file meta data
+        parented_folders = self.parented_folders
+
+        def find_parents(node_id, drive_root):
+
+            current_node = parented_folders.get(node_id)
+            parent_id = current_node["parents"]["id"]
+
+            if parent_id == drive_root:
+                return [node_id]
+            else:
+                return [node_id] + find_parents(parent_id, drive_root)
+
+        # find all the folders found in a file meta
         for item in self.parented_files.values():
             parents = item["parents"]
             pid, is_root = parents["id"], parents["isRoot"]
@@ -123,7 +125,7 @@ class DataFilter(DataHandler):
             if (pid in self.children or self.roots) or pid == self.drive_root:
                 continue
 
-            folder = self.parented_folders.get(pid)
+            folder = parented_folders.get(pid)
             # skip items shared with you via link
             if not folder:
                 continue
@@ -134,8 +136,15 @@ class DataFilter(DataHandler):
                 self.children[pid] = folder
 
         # find the remaining parent folders up to drive root
+        remaining = []
         for folder in self.children.copy().values():
-            self._find_parents(folder)
+            p = folder["parents"]["id"]
+            if p == self.drive_root:
+                continue
+            new_folders = (find_parents(p, self.drive_root))
+            if new_folders:
+                remaining += new_folders
+        print remaining
 
         self.folders = self.children, self.roots,
 
