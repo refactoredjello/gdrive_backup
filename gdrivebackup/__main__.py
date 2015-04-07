@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     if drive_data:
         dl_list, found_folders = drive_data
-        pprint(found_folders)
+        pprint(*found_folders)
         pprint(dl_list)
         #create folders
         folders = Folder.make_folders(*found_folders) # dict of folder objs

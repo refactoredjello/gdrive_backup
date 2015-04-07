@@ -21,8 +21,7 @@ class DataHandler(object):
 
 class DataFilter(DataHandler):
     """Filters and parses downloaded folder and file data in preparation for
-    writing to the filesystem.
-    """
+    writing to the filesystem."""
 
     def __init__(self, json_path, file_meta, folder_meta, drive_root):
         DataHandler.__init__(self, json_path)
@@ -102,62 +101,63 @@ class DataFilter(DataHandler):
             self.dl_list[fid] = {'url': url, 'ext': ext, 'title': v["title"]}
 
     def _find_folders(self):
-        """Creates a tuple with two dicts, one of root folders and one of
-        children, either of which were found in a file's meta data."""
+        """Searches filtered files for folder ids and then recursively finds
+        their parent folders."""
 
+        # set local vars for recursive scope
         parented_folders = self.parented_folders
+        roots = {}
+        children = {}
 
         def find_parents(node_id, drive_root):
-
+            """Recursively find the parents of each folder"""
             current_node = parented_folders.get(node_id)
             parent_id = current_node["parents"]["id"]
 
             if parent_id == drive_root:
-                return [node_id]
+                roots[node_id] = current_node
             else:
-                return [node_id] + find_parents(parent_id, drive_root)
+                children[node_id] = current_node
+                find_parents(parent_id, drive_root)
 
         # find all the folders found in a file meta
-        for item in self.parented_files.values():
-            parents = item["parents"]
-            pid, is_root = parents["id"], parents["isRoot"]
+        for folder_data in self.parented_files.values():
+            pid = folder_data["parents"]["id"]
 
-            if (pid in self.children or self.roots) or pid == self.drive_root:
+            if pid in self.children or pid in self.roots:
                 continue
 
             folder = parented_folders.get(pid)
-            # skip items shared with you via link
+            # skip items shared via link
             if not folder:
                 continue
-
-            if is_root:
+            if folder["parents"]["isRoot"]:
                 self.roots[pid] = folder
             else:
                 self.children[pid] = folder
 
         # find the remaining parent folders up to drive root
-        remaining = []
         for folder in self.children.copy().values():
             p = folder["parents"]["id"]
             if p == self.drive_root:
                 continue
-            new_folders = (find_parents(p, self.drive_root))
-            if new_folders:
-                remaining += new_folders
-        print remaining
+            else:
+                find_parents(p, self.drive_root)
+
+        self.children.update(children)
+        self.roots.update(roots)
 
         self.folders = self.children, self.roots,
 
     def __call__(self):
-        """
-        Starts the filter using data downloaded via the DriveProvider.
+        """Starts the filter using data downloaded via the DriveProvider.
 
         :returns:
         1.Dict: file id as key, and dict of export url, file extension and
         title as value.
         2.Dict: filtered folders fid as key and it's downloaded meta data as
-        value.
-        """
+        value."""
+
         if not self.data_local:  # filter on first run
             print "First run!"
             self.to_json(self.parented_files)
