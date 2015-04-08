@@ -56,12 +56,12 @@ class DriveProvider(Authorize):
             page_token = batch.get("nextPageToken")
             if not page_token:
                 break
-
+        print "Done!"
         # We only need the first parent of a resource
         for item in items:
             if item["parents"]:
                 item["parents"] = item["parents"][0]
-        print "Done!"
+
         return {item.pop("id"): item for item in items}
 
     def get_folders(self):

@@ -3,24 +3,21 @@ class Folder(object):
     tree"""
     folders = {}
 
-    def __init__(self, fid="", parents=None, title="", is_root=False):
+    def __init__(self, fid="", pid=None, title="", is_root=False):
         self.fid = fid
-        if parents:
-            self.parent = parents["id"]
-        else:
-            self.parent = []
+        self.parent = pid
         self.title = title
         self.is_root = is_root
-        self._child = []
+        self.children = []
 
     @property
     def child(self):
-        if self._child:
-            return self._child
+        if self.children:
+            return self.children
 
     @child.setter
     def child(self, child_id):
-        self._child.append(child_id)
+        self.children.append(child_id)
 
     @classmethod
     def make_folders(cls, children, roots):
@@ -31,7 +28,13 @@ class Folder(object):
 
         for fid, folder in children.iteritems():
             title = folder["title"]
-            parents = folder["parents"]
-            cls.folders[fid] = Folder(fid, parents, title, False)
+            pid = folder["parents"]["id"]
+
+            # update the parent
+            parent = cls.folders.get(pid)
+            parent.child = fid
+            cls.folders[pid] = parent
+
+            cls.folders[fid] = Folder(fid, pid, title, False)
 
         return cls.folders

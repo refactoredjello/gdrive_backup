@@ -29,12 +29,17 @@ if __name__ == '__main__':
     drive_data = handler() # get filtered files and folders
 
     if drive_data:
-        dl_list, found_folders = drive_data
-        pprint(*found_folders)
-        pprint(dl_list)
+        dl_list, folders = drive_data
+        #pprint(dl_list)
         #create folders
-        folders = Folder.make_folders(*found_folders) # dict of folder objs
+        folders = Folder.make_folders(*folders) # dict of folder objs
 
+        for fid, folder in folders.iteritems():
+            print folder.title, fid
+            if folder.children:
+                print "Children: {}".format(folder.children)
+            if folder.parent:
+                print "Parent: {}".format(folder.parent)
 
         # create files
 
