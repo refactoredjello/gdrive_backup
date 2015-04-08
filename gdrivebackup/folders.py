@@ -7,7 +7,7 @@ class Folder(object):
         self.fid = fid
         self.parent = pid
         self.title = title
-        self.is_root = is_root
+        self.is_root = is_root # relative to drive_root :: "My Drive"
         self.children = []
 
     @property

@@ -10,7 +10,7 @@ from utils.logconf import initialize_logger
 initialize_logger('logs') # initialize main log  before importing modules
 
 from configurator import ensure_dir, path_config
-from handlers import DataFilter
+from handlers import DataFilter as DF
 from folders import Folder
 from service import DriveProvider, FileDownloader
 
@@ -22,11 +22,10 @@ if __name__ == '__main__':
 
     go = DriveProvider()
 
-    # Create a data filter object
-    handler = DataFilter(json_path, go.get_files(), go.get_folders(),
-                         go.get_root())
+    handler = DF(json_path, go.get_files(), go.get_folders(), go.get_root())
 
-    drive_data = handler() # get filtered files and folders
+    # filter files and folders & data store to json file
+    drive_data = handler()
 
     if drive_data:
         dl_list, folders = drive_data

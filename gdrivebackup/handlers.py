@@ -90,8 +90,8 @@ class DataFilter(DataHandler):
         to_parse = self.parented_files
         if self.data_local:
             if not self.filtered:
-                raise Exception("self.filter does not have any new or changed "
-                                "items")
+                raise Exception("file filter did not report any new or "
+                                "changed items")
             to_parse = self.filtered
 
         for fid, v in to_parse.iteritems():
@@ -115,13 +115,13 @@ class DataFilter(DataHandler):
         def find_parents(node_id, drive_root):
             """Recursively find the parents of each folder"""
             current_node = parented_folders.get(node_id)
-            parent_id = current_node["parents"]["id"]
+            node_parent_id = current_node["parents"]["id"]
 
-            if parent_id == drive_root:
+            if node_parent_id == drive_root:
                 roots[node_id] = current_node
             else:
                 children[node_id] = current_node
-                find_parents(parent_id, drive_root)
+                find_parents(node_parent_id, drive_root)
 
         # find all folders found in a file meta
         for folder_data in self.parented_files.values():
@@ -131,9 +131,9 @@ class DataFilter(DataHandler):
                 continue
 
             folder = parented_folders.get(pid)
-            # skip items shared via link
-            if not folder:
+            if not folder:  # skip items shared via link
                 continue
+
             if folder["parents"]["isRoot"]:
                 self.roots[pid] = folder
             else:
