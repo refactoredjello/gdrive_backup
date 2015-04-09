@@ -3,9 +3,6 @@ import json
 
 
 class DataHandler(object):
-    """All file and folder data passed throughout the instance is in the form
-    of a dict with drive id as key and meta data as value. """
-
     def __init__(self, json_path):
         self.data_local = os.path.isfile(json_path)
         self.json_path = json_path
@@ -20,14 +17,16 @@ class DataHandler(object):
 
 
 class DataFilter(DataHandler):
-    """Filters and parses downloaded folder and file data in preparation for
-    writing to the filesystem."""
+    """Filters and parses downloaded folder and file meta data in
+    preparation for writing to the filesystem. All file and folder data passed
+    throughout an instance is in the form of a dict with drive id as key and
+    meta data as value."""
 
     def __init__(self, json_path, file_meta, folder_meta, drive_root):
         DataHandler.__init__(self, json_path)
         self.drive_root = drive_root
 
-        # Removes orphans, and is used as base data throughout filter object.
+        # Removes orphans :: is used as base data throughout filter object.
         self.parented_folders = {fid: v for fid, v in folder_meta.iteritems()
                                  if v.get("parents")}
         self.parented_files = {fid: v for fid, v in file_meta.iteritems() if
@@ -40,9 +39,9 @@ class DataFilter(DataHandler):
         self.children = {}
         self.roots = {}
 
-        # returned attributes if instance is called
-        self.folders = () # a tuple containing two dicts (roots, children)
-        self.dl_list = {}  # key : fid, value: {download url, file extension}
+        # returned attributes when filter is called
+        self.folders = ()  # a tuple containing two dicts (roots, children)
+        self.dl_list = {}  # fid: {download url, file extension, title}
 
     def _shared_orphans(self):
         for fid, v in self.parented_files.copy().iteritems():
