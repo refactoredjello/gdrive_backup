@@ -18,7 +18,7 @@ from pprint import pprint
 
 if __name__ == '__main__':
     storage_path, json_path = path_config("..\\file_store")
-    ensure_dir([storage_path,])
+    ensure_dir([storage_path, ])
 
     go = DriveProvider()
 
@@ -29,16 +29,19 @@ if __name__ == '__main__':
 
     if drive_data:
         dl_list, folders = drive_data
-        #pprint(dl_list)
-        #create folders
-        folders = Folder.make_folders(*folders) # dict of folder objs
 
-        for fid, folder in folders.iteritems():
-            print folder.title, fid
-            if folder.children:
-                print "Children: {}".format(folder.children)
-            if folder.parent:
-                print "Parent: {}".format(folder.parent)
+        #create folders
+        folders = Folder.make_folders(*folders) # create the folder tree
+        Folder.make_tree(storage_path)  # create the tree in the filesystem
+
+
+
+        # for fid, folder in folders.iteritems():
+        #     print folder.title, fid
+        #     if folder.children:
+        #         print "Children: {}".format(folder.children)
+        #     if folder.parent:
+        #         print "Parent: {}".format(folder.parent)
 
         # create files
 
