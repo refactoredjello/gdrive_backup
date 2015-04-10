@@ -46,17 +46,20 @@ class DriveProvider(Authorize):
             }
         items = []
         page_token = None
+        get_requests = 1
         while True:
             if page_token:
                 payload['pageToken'] = page_token
+            print "Request: {}".format(get_requests)
             batch = self.service.files().list(**payload).execute()
-
+            get_requests += 1
             items.extend(batch["items"])
 
             page_token = batch.get("nextPageToken")
             if not page_token:
                 break
         print "Done!"
+
         # We only need the first parent of a resource
         for item in items:
             if item["parents"]:
@@ -88,13 +91,14 @@ class FileDownloader(object):
     def __init__(self):
         self.dl_count = 0
         self.downloaded_content = ()
+        self.error = False
 
     def __call__(self, dl_list, service):
         """
         :param dl_list: dict with file id as key and export url as value
         :param service: an authorized drive service object
         """
-        for fid, v in tqdm(dl_list.iteritens(), leave=True,):
+        for fid, v in tqdm(dl_list.iteritems(), leave=True,):
             # Download file using an authorized http object
             response, content = service._http.request(v.get("url"))
 
@@ -102,6 +106,9 @@ class FileDownloader(object):
                 self.downloaded_content += ((fid, content),)
                 self.dl_count += 1
             else:
+                self.error = True
                 log.error('An error occurred', response)
 
+        if self.error:
+            print "Print download completed with an error"
         return self.downloaded_content

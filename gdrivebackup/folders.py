@@ -13,6 +13,7 @@ class Folder(object):
         self.title = title
         self.is_root = is_root  # relative to drive_root :: "My Drive"
         self.children = []
+        self.path = []
 
     @property
     def child(self):
@@ -22,6 +23,7 @@ class Folder(object):
     @child.setter
     def child(self, child_id):
         self.children.append(child_id)
+
 
     @classmethod
     def make_folders(cls, children, roots):
@@ -64,10 +66,12 @@ class Folder(object):
 
             if not child and not pid:  # mk roots with no children
                 folder_path = path.join(storage_path, title)
+                folder_obj.path = folder_path
                 mkdir(folder_path)
 
             elif not child and pid:  # mk tree starting with leafs
                 make_paths(folder_obj)
                 leaf_path = path.join(storage_path, *path_tree[-1::-1])
+                folder_obj.path = leaf_path
                 makedirs(leaf_path)
 

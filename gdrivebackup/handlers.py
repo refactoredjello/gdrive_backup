@@ -97,11 +97,15 @@ class DataFilter(DataHandler):
             export_type, ext = export_types.get(v["mimeType"])
             url = v["exportLinks"][export_type]
 
-            self.dl_list[fid] = {'url': url, 'ext': ext, 'title': v["title"]}
+            self.dl_list[fid] = {
+                'url': url,
+                'ext': ext,
+                'title': v["title"],
+                'pid': v["parents"]["id"]
+            }
 
     def _find_folders(self):
-        """
-        Searches for folders in two steps:
+        """Searches for folders in two steps:
                 1. Searches filtered files for parent ids
                 2. Recursively finds their parents up till root
         """
@@ -112,7 +116,7 @@ class DataFilter(DataHandler):
         children = {}
 
         def find_parents(node_id, drive_root):
-            """Recursively find the parents of each folder"""
+            """Recursively find the parents of each leaf"""
             current_node = parented_folders.get(node_id)
             node_parent_id = current_node["parents"]["id"]
 
@@ -138,7 +142,7 @@ class DataFilter(DataHandler):
             else:
                 self.children[pid] = folder
 
-        # find the remaining parent folders up to drive root
+        # find the parent folders of leafs up to drive root
         for folder in self.children.copy().values():
             p = folder["parents"]["id"]
             if p == self.drive_root:
