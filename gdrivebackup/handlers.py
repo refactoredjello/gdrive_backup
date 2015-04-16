@@ -16,6 +16,9 @@ class DataHandler(object):
             return json.load(f)
 
 
+
+
+
 class DataFilter(DataHandler):
     """Filters and parses downloaded folder and file meta data in
     preparation for writing to the filesystem. All file and folder data passed
@@ -106,49 +109,59 @@ class DataFilter(DataHandler):
 
     def _find_folders(self):
         """Searches for folders in two steps:
-                1. Searches filtered files for parent ids
+                1. Searches filtered files for their parent ids
                 2. Recursively finds their parents up till root
         """
 
         # set local vars for recursive scope
         parented_folders = self.parented_folders
+        root_id = self.drive_root
         roots = {}
         children = {}
 
-        def find_parents(node_id, drive_root):
-            """Recursively find the parents of each leaf"""
-            current_node = parented_folders.get(node_id)
-            node_parent_id = current_node["parents"]["id"]
+        def find_parents(child_id, node_id):
+            """Recursively create and find the parents of each folder and store
+            store each parents child ids.
 
-            if node_parent_id == drive_root:
-                roots[node_id] = current_node
-            else:
-                children[node_id] = current_node
-                find_parents(node_parent_id, drive_root)
+            :param child_id: id of previous folder id
+            :param node_id: parent id of child_id set to be the current node
+            """
+            node = parented_folders.get(node_id)
+            if not node:
+                return None
 
-        # find all folders found in a file meta
+            if not node.get("child"):
+                node[u"child"] = []
+
+            # update the parent with child
+            node["child"].append(child_id)
+
+            # catch roots with no files
+            if node["parents"]["id"] == root_id:
+                roots[node_id] = node
+
+            elif node["parents"]["id"] != root_id:
+                children[node_id] = node
+                find_parents(node_id, node["parents"]["id"])
+
+        # Step 1, find folders ids in filtered files resources
         for folder_data in self.parented_files.values():
-            pid = folder_data["parents"]["id"]
 
-            if pid in self.children or pid in self.roots:
+            file_parent_id = folder_data["parents"]["id"]
+
+            if file_parent_id in children or file_parent_id in roots:
                 continue
 
-            folder = parented_folders.get(pid)
-            if not folder:  # skip items shared via link
+            f = parented_folders.get(file_parent_id)  # get folder meta data
+            if not f:  # skip accessible to anyone with url & not in My Drive
                 continue
 
-            if folder["parents"]["isRoot"]:
-                self.roots[pid] = folder
-            else:
-                self.children[pid] = folder
-
-        # find the parent folders of leafs up to drive root
-        for folder in self.children.copy().values():
-            p = folder["parents"]["id"]
-            if p == self.drive_root:
-                continue
-            else:
-                find_parents(p, self.drive_root)
+            if f["parents"]["id"] == self.drive_root:
+                roots[file_parent_id] = f
+            elif file_parent_id != self.drive_root:
+                children[file_parent_id] = f  # leaf node
+                # Step 2, find folders up till root
+                find_parents(file_parent_id, f["parents"]["id"])
 
         self.children.update(children)
         self.roots.update(roots)

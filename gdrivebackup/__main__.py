@@ -1,3 +1,4 @@
+# Todo write folders to file system start from root down
 # Todo write files to fs
 # Todo update json with new data
 # TODO setup CLI and ability to choose save directory and type of file export
@@ -27,14 +28,19 @@ if __name__ == '__main__':
     # filter files and folders
     drive_data = handler()
 
+
     if drive_data:
         dl_list, folders = drive_data
+        print "Children: "
+        pprint(folders[0])
+        print "Roots: "
+        pprint(folders[1])
 
         # create folders
-        folders = Folder.make_folders(*folders)
+        #folders = Folder.make_folders(*folders)
 
         # write folder tree in the filesystem and update folders with paths
-        Folder.make_tree(storage_path)
+       # Folder.make_tree(storage_path)
 
         # create files
 
