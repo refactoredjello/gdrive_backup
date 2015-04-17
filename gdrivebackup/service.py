@@ -120,6 +120,7 @@ class FileDownloader(object):
 
         if self.error:
             print "Print download completed with an error"
+
         print "Downloaded: {}".format(self.dl_count)
 
     def __call__(self):

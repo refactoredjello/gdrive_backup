@@ -1,8 +1,8 @@
 # Todo update json with new data
-# TODO setup CLI and ability to choose save directory and type of file export
+# Todo setup CLI and ability to choose save directory and type of file export
 # Todo add loggers
 # Todo handle if file moved to another folder
-# TODO move file meta storage to sql database?
+# Todo move file meta storage to sql database?
 
 from utils.logconf import initialize_logger
 initialize_logger('logs') # initialize main log  before importing modules

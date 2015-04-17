@@ -16,6 +16,7 @@ class DataHandler(object):
         with open(self.json_path, 'r') as f:
             return json.load(f)
 
+
 class DataFilter(DataHandler):
     """Filters and parses downloaded folder and file meta data in
     preparation for writing to the filesystem. All file and folder data passed
@@ -190,7 +191,7 @@ class DataFilter(DataHandler):
 
 
 def make_folder_paths(storage_path, children, roots):
-    """Creates the folder tree in the filesystem and adds folder path to the
+    """Creates the folder tree in the filesystem and adds the folder path to
     each folder dictionary.
 
     :param children: dict of folders below root as dicts
@@ -203,8 +204,10 @@ def make_folder_paths(storage_path, children, roots):
         for cid in cid_list:
             child = children.get(cid)
             child_path = path.join(parent_path, child["title"])
+
             child["path"] = child_path
             mkdir(child_path)
+
             child_cid_list = child.get("child")
             if child_cid_list:
                 create_children(child_cid_list, child_path)
@@ -215,7 +218,7 @@ def make_folder_paths(storage_path, children, roots):
         root["path"] = root_path
         mkdir(root_path)
 
-    # Start recursive child dir creator and add it's path to it's dict
+    # Start recursive child path builder
         child_list = root.get("child")
         if child_list:
             create_children(child_list, root_path)
