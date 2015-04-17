@@ -1,3 +1,4 @@
+# Todo add support for google drawing, forms
 # Todo update json with new data
 # Todo setup CLI and ability to choose save directory and type of file export
 # Todo add loggers
