@@ -233,19 +233,20 @@ def write_files(dl_content, folders, drive_root, storage_path):
     :param dl_content: a tuple of filtered files as a tuple
     :param folders: all filtered folders dicts with a path key, value
     """
-    # TODO fix file names with slashes - look at master branch
 
     for file_tuple in dl_content:
         _, content, title, ext, pid = file_tuple
+
+        # remove unfriendly filesystem characters
+        title = title.translate({ord(c): u'-' for c in u'/|'})
 
         file_path = storage_path
 
         if pid != drive_root:
             file_path = folders[pid]["path"]
 
-        print file_path + "\\" + title + "." + ext
-        #with open(file_path + title + ext, 'wb') as f:
-            #f.write(content)
+        with open(file_path + "\\" + title + "." + ext, 'wb') as f:
+            f.write(content)
 
 
 

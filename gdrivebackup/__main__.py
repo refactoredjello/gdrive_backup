@@ -1,4 +1,3 @@
-# Todo write files to fs
 # Todo update json with new data
 # TODO setup CLI and ability to choose save directory and type of file export
 # Todo add loggers
