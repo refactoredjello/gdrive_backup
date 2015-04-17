@@ -1,4 +1,3 @@
-# Todo write folders to file system start from root down
 # Todo write files to fs
 # Todo update json with new data
 # TODO setup CLI and ability to choose save directory and type of file export
@@ -11,38 +10,35 @@ initialize_logger('logs') # initialize main log  before importing modules
 
 from configurator import ensure_dir, path_config
 from handlers import DataFilter as DF
-from handlers import make_folder_paths
+from handlers import make_folder_paths, write_files
 from service import DriveProvider, FileDownloader
 
 from pprint import pprint
 
 if __name__ == '__main__':
-    storage_path, json_path = path_config("..\\file_store")
-    ensure_dir([storage_path, ])
+    STORAGE_PATH, json_path = path_config("..\\file_store")
+    ensure_dir([STORAGE_PATH, ])
 
     go = DriveProvider()
+    DRIVE_ROOT_ID = go.get_root()
 
     # first pass basic filter and DataFilter instantiation
-    handler = DF(json_path, go.get_files(), go.get_folders(), go.get_root())
+    handler = DF(json_path, go.get_files(), go.get_folders(), DRIVE_ROOT_ID)
 
     # filter files and folders
     drive_data = handler()
 
-
     if drive_data:
         dl_list, folders = drive_data
-        print "Children: "
-        pprint(folders[0])
-        print "Roots: "
-        pprint(folders[1])
 
         # create folders
-        make_folder_paths(storage_path, *folders)
+        updated_folders = make_folder_paths(STORAGE_PATH, *folders)
 
-        # write folder tree in the filesystem and update folders with paths
-       # Folder.make_tree(storage_path)
+        # Download files
+        dl_content = FileDownloader(dl_list, go())
 
-        # create files
+        # Write to fs using the folder tree
+        write_files(dl_content(), updated_folders, DRIVE_ROOT_ID, STORAGE_PATH)
 
 
 

@@ -88,27 +88,39 @@ class FileDownloader(object):
 
     :return: a tuple of downloaded file content objects and it's drive id
     """
-    def __init__(self):
+    def __init__(self, dl_list, service):
         self.dl_count = 0
         self.downloaded_content = ()
         self.error = False
+        self.service = service
+        self.dl_list = dl_list
+        self.download()
 
-    def __call__(self, dl_list, service):
+    def download(self):
         """
         :param dl_list: dict with file id as key and export url as value
         :param service: an authorized drive service object
         """
-        for fid, v in tqdm(dl_list.iteritems(), leave=True,):
+        desc = "Downloading file"
+        for fid, v in tqdm(self.dl_list.iteritems(), leave=True, desc=desc):
             # Download file using an authorized http object
-            response, content = service._http.request(v.get("url"))
+            response, content = self.service._http.request(v.get("url"))
 
             if response.status == 200:
-                self.downloaded_content += ((fid, content),)
+                self.downloaded_content += ((fid,
+                                             content,
+                                             v["title"],
+                                             v["ext"],
+                                             v["pid"]),)
                 self.dl_count += 1
+
             else:
                 self.error = True
                 log.error('An error occurred', response)
 
         if self.error:
             print "Print download completed with an error"
+        print "Downloaded: {}".format(self.dl_count)
+
+    def __call__(self):
         return self.downloaded_content

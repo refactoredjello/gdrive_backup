@@ -193,8 +193,11 @@ def make_folder_paths(storage_path, children, roots):
     """Creates the folder tree in the filesystem and adds folder path to the
     each folder dictionary.
 
-    :returns updated children and roots dicts
+    :param children: dict of folders below root as dicts
+    :param roots: dict of root folders as dicts
+    :returns a dict of all folder dicts
     """
+    folders = {}
 
     def create_children(cid_list, parent_path):
         for cid in cid_list:
@@ -204,18 +207,46 @@ def make_folder_paths(storage_path, children, roots):
             mkdir(child_path)
             child_cid_list = child.get("child")
             if child_cid_list:
-                create_children(child_cid_list, child_path )
+                create_children(child_cid_list, child_path)
 
+    # Create root dir and add path to it's dict
     for root in roots.values():
         root_path = path.join(storage_path, root["title"])
         root["path"] = root_path
         mkdir(root_path)
 
+    # Start recursive child dir creator and add it's path to it's dict
         child_list = root.get("child")
         if child_list:
             create_children(child_list, root_path)
 
-    return children, roots
+    folders.update(roots)
+    folders.update(children)
+
+    return folders
+
+
+def write_files(dl_content, folders, drive_root, storage_path):
+    """Create folder in the file system. Looks up the file path using it's
+    parent
+
+    :param dl_content: a tuple of filtered files as a tuple
+    :param folders: all filtered folders dicts with a path key, value
+    """
+    # TODO fix file names with slashes - look at master branch
+
+    for file_tuple in dl_content:
+        _, content, title, ext, pid = file_tuple
+
+        file_path = storage_path
+
+        if pid != drive_root:
+            file_path = folders[pid]["path"]
+
+        print file_path + "\\" + title + "." + ext
+        #with open(file_path + title + ext, 'wb') as f:
+            #f.write(content)
+
 
 
 
