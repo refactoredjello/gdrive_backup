@@ -1,5 +1,6 @@
 import os
 import json
+from os import path, mkdir, makedirs
 
 
 class DataHandler(object):
@@ -14,10 +15,6 @@ class DataHandler(object):
     def from_json(self):
         with open(self.json_path, 'r') as f:
             return json.load(f)
-
-
-
-
 
 class DataFilter(DataHandler):
     """Filters and parses downloaded folder and file meta data in
@@ -190,3 +187,28 @@ class DataFilter(DataHandler):
         self._find_folders()
 
         return self.dl_list, self.folders
+
+
+def make_folder_paths(storage_path, children, roots):
+
+    def create_children(cid_list, parent_path):
+        for cid in cid_list:
+            child = children.get(cid)
+            child_path = path.join(parent_path, child["title"])
+            mkdir(child_path)
+            child_cid_list = child.get("child")
+            if child_cid_list:
+                create_children(child_cid_list, child_path )
+
+    for root in roots.values():
+        root_path = path.join(storage_path, root["title"])
+        mkdir(root_path)
+
+        child_list = root.get("child")
+        if child_list:
+            create_children(child_list, root_path)
+
+
+
+
+

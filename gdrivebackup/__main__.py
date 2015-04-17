@@ -11,7 +11,7 @@ initialize_logger('logs') # initialize main log  before importing modules
 
 from configurator import ensure_dir, path_config
 from handlers import DataFilter as DF
-from folders import Folder
+from handlers import make_folder_paths
 from service import DriveProvider, FileDownloader
 
 from pprint import pprint
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         pprint(folders[1])
 
         # create folders
-        #folders = Folder.make_folders(*folders)
+        make_folder_paths(storage_path, *folders)
 
         # write folder tree in the filesystem and update folders with paths
        # Folder.make_tree(storage_path)
