@@ -190,11 +190,17 @@ class DataFilter(DataHandler):
 
 
 def make_folder_paths(storage_path, children, roots):
+    """Creates the folder tree in the filesystem and adds folder path to the
+    each folder dictionary.
+
+    :returns updated children and roots dicts
+    """
 
     def create_children(cid_list, parent_path):
         for cid in cid_list:
             child = children.get(cid)
             child_path = path.join(parent_path, child["title"])
+            child["path"] = child_path
             mkdir(child_path)
             child_cid_list = child.get("child")
             if child_cid_list:
@@ -202,12 +208,14 @@ def make_folder_paths(storage_path, children, roots):
 
     for root in roots.values():
         root_path = path.join(storage_path, root["title"])
+        root["path"] = root_path
         mkdir(root_path)
 
         child_list = root.get("child")
         if child_list:
             create_children(child_list, root_path)
 
+    return children, roots
 
 
 
