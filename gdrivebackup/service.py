@@ -10,8 +10,8 @@ log = logging.getLogger("main." + __name__)
 
 
 class DriveProvider(Authorize):
-    """Provides an api for getting meta data of  files that are in
-    google docs, slides,or sheets format, and drive folders.
+    """Provides an api for getting meta data for files that are in
+    google(e.g. docs, slides, or sheets format), and all drive folders.
 
     :return: authorized drive service
     """
@@ -60,7 +60,7 @@ class DriveProvider(Authorize):
                 break
         print "Done!"
 
-        # We only need the first parent of a resource
+        # We only need the first parent of a resource representation
         for item in items:
             if item["parents"]:
                 item["parents"] = item["parents"][0]
@@ -86,6 +86,9 @@ class DriveProvider(Authorize):
 class FileDownloader(object):
     """Downloads a list of files using an export url.
 
+    :param dl_list: dict with file id as key and export url as value
+    :param service: an authorized drive service object
+
     :return: a tuple of downloaded file content objects and it's drive id
     """
     def __init__(self, dl_list, service):
@@ -97,10 +100,6 @@ class FileDownloader(object):
         self.download()
 
     def download(self):
-        """
-        :param dl_list: dict with file id as key and export url as value
-        :param service: an authorized drive service object
-        """
         desc = "Downloading file"
         for fid, v in tqdm(self.dl_list.iteritems(), leave=True, desc=desc):
             # Download file using an authorized http object
@@ -113,7 +112,6 @@ class FileDownloader(object):
                                              v["ext"],
                                              v["pid"]),)
                 self.dl_count += 1
-
             else:
                 self.error = True
                 log.error('An error occurred', response)

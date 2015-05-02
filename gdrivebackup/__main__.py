@@ -1,12 +1,5 @@
-# Todo add support for google drawing, forms
-# Todo update json with new data
-# Todo setup CLI and ability to choose save directory and type of file export
-# Todo add loggers
-# Todo handle if file moved to another folder
-# Todo move file meta storage to sql database?
-
 from utils.logconf import initialize_logger
-initialize_logger('logs') # initialize main log  before importing modules
+initialize_logger('logs') # initialize main log before importing modules
 
 from configurator import ensure_dir, path_config
 from handlers import DataFilter as DF

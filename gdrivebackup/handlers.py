@@ -1,6 +1,6 @@
 import os
 import json
-from os import path, mkdir, makedirs
+from os import path, mkdir
 
 
 class DataHandler(object):
@@ -73,8 +73,8 @@ class DataFilter(DataHandler):
     def _get_export_links(self):
         export_types = {
             'application/vnd.google-apps.document': (
-                'application/vnd.openxmlformats-officedocument.wordprocessingml'
-                '.document', 'docx'
+                'application/vnd.openxmlformats-officedocument.'
+                'wordprocessingml.document', 'docx'
             ),
             'application/vnd.google-apps.spreadsheet': (
                 'application/vnd.openxmlformats-officedocument.spreadsheetml'
@@ -119,7 +119,7 @@ class DataFilter(DataHandler):
 
         def find_parents(child_id, node_id):
             """Recursively create and find the parents of each folder and store
-            store each parents child ids.
+            each parent's child folder ids.
 
             :param child_id: id of previous folder id
             :param node_id: parent id of child_id set to be the current node
@@ -142,7 +142,7 @@ class DataFilter(DataHandler):
                 children[node_id] = node
                 find_parents(node_id, node["parents"]["id"])
 
-        # Step 1, find folders ids in filtered files resources
+        # Step 1, find folders ids in filtered files resource representation
         for folder_data in self.parented_files.values():
 
             file_parent_id = folder_data["parents"]["id"]
@@ -150,14 +150,14 @@ class DataFilter(DataHandler):
             if file_parent_id in children or file_parent_id in roots:
                 continue
 
-            f = parented_folders.get(file_parent_id)  # get folder meta data
+            f = parented_folders.get(file_parent_id)
             if not f:  # skip accessible to anyone with url & not in My Drive
                 continue
 
             if f["parents"]["id"] == self.drive_root:
                 roots[file_parent_id] = f
             elif file_parent_id != self.drive_root:
-                children[file_parent_id] = f  # leaf node
+                children[file_parent_id] = f
                 # Step 2, find folders up till root
                 find_parents(file_parent_id, f["parents"]["id"])
 
@@ -168,12 +168,15 @@ class DataFilter(DataHandler):
 
     def __call__(self):
         """Starts the filter using data downloaded via the DriveProvider.
+        The return value of folders is separated to help create a folder
+        tree which starts with root folders.
 
         :returns:
-        1.Dict: file id as key, and dict of export url, file extension and
+        dl_list: file id as key, and dict of export url, file extension and
         title as value.
-        2.Dict: filtered folders fid as key and it's downloaded meta data as
-        value."""
+        folders: a tuple of two dicts(children, roots) representing filtered
+        folders with fid as key and it's downloaded meta data as value.
+        """
         print "Started filter"
         if not self.data_local:  # filter on first run
             print "First run!"
@@ -191,12 +194,12 @@ class DataFilter(DataHandler):
 
 
 def make_folder_paths(storage_path, children, roots):
-    """Creates the folder tree in the filesystem and adds the folder path to
+    """Creates the folder tree in the filesystem and adds a folder path to
     each folder dictionary.
 
     :param children: dict of folders below root as dicts
     :param roots: dict of root folders as dicts
-    :returns a dict of all folder dicts
+    :returns a dict of all folders
     """
     folders = {}
 
@@ -230,8 +233,8 @@ def make_folder_paths(storage_path, children, roots):
 
 
 def write_files(dl_content, folders, drive_root, storage_path):
-    """Create folder in the file system. Looks up the file path using it's
-    parent
+    """Create files in the file system. Looks up the file path using it's
+    parent folder.
 
     :param dl_content: a tuple of filtered files as a tuple
     :param folders: all filtered folders dicts with a path key, value
